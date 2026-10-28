@@ -1,3 +1,25 @@
+// Fix for AGP AndroidLocationsException when both ANDROID_PREFS_ROOT and ANDROID_USER_HOME are set in environment
+try {
+    val pe = Class.forName("java.lang.ProcessEnvironment")
+    fun cleanMap(fieldName: String) {
+        try {
+            val field = pe.getDeclaredField(fieldName).apply { isAccessible = true }
+            val obj = field.get(null) ?: return
+            if (obj is MutableMap<*, *>) {
+                obj.remove("ANDROID_PREFS_ROOT")
+            } else {
+                try {
+                    val mField = obj.javaClass.getDeclaredField("m").apply { isAccessible = true }
+                    (mField.get(obj) as? MutableMap<*, *>)?.remove("ANDROID_PREFS_ROOT")
+                } catch (_: Throwable) {}
+            }
+        } catch (_: Throwable) {}
+    }
+    cleanMap("theEnvironment")
+    cleanMap("theUnmodifiableEnvironment")
+    cleanMap("theCaseInsensitiveEnvironment")
+} catch (_: Throwable) {}
+
 pluginManagement {
     val flutterSdkPath = run {
         val properties = java.util.Properties()
